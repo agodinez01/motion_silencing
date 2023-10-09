@@ -1,0 +1,13 @@
+function dataMatrix = createDataMatrix(sampling_rate, num_trials)
+
+% Creates data matrix
+
+sampling_rate = 500; % Hz
+num_trials = 2; 
+
+frame_rate = 1/sampling_rate;
+stimulus_time = 500; % ms
+
+matrix.frames = 1:(stimulus_time/frame_rate);
+matrix.xpos   = 
+matrix
