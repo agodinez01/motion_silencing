@@ -24,8 +24,6 @@ PsychDebugWindowConfiguration(0, 0.95);
 scr.white       = WhiteIndex(screenNumber);
 scr.black       = BlackIndex(screenNumber);
 scr.gray        = GrayIndex(screenNumber);
-scr.bgColor     = scr.white;
-scr.fgColor     = scr.black;
 
 [scr.window, scr.windowRect] = PsychImaging('OpenWindow', screenNumber, scr.gray);
 Screen('BlendFunction', scr.window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -70,7 +68,7 @@ Priority(topPriorityLevel);
 params.dotColor         = 1;                            % -1 = random hue (full saturation and brightness); avlues between 0 and 1: hue value for all dots
 params.dotNumber        = [100];                        % dot number
 params.dotSpeed         = [3.75, 7.5, 15, 30, 60, 120]; % [deg/s] dot speed (neg is ccw)
-params.dotSize          = 10;                           % [pix] dot size of 1 dva
+params.dotSize          = 15;                           % [pix] dot size of 1 dva
 params.dotSpeedPerFrame = params.dotSpeed*(scr.frameDuration/1000) * pi/180; % [px/frame] Dot speed 
 params.dotColorChange   = 0.15;
 
@@ -138,8 +136,7 @@ for b = 1:params.nBlocks
                     
                     trial(t).dots(1).col      = (params.colMax-params.colMin).*rand(params.dotNumber(dnum),1) + params.colMin; % Get a gray scale value within the range we've specified [0.3, 0.7]
                     trial(t).dots(1).col      = repmat(trial(t).dots(1).col(:,1),1,3); % Make it three columns for RGB
-
-                               
+            
                 else
                     trial(t).dots(1).col = [hsv2rgb([params.dotCol*ones(params.dotNumber(dnum),2)]) ones(params.dotNum(dnum), 1)];
                 end

@@ -10,34 +10,26 @@ Screen('Preference', 'SkipSyncTests', 0); % Make sure this is set to 0 when runn
 %                           Display setup
 %--------------------------------------------------------------------------
 
+if setting.TEST == 1 % When in dummy mode, set the screen to be half transparent to be able to see errors in the terminal
+    PsychDebugWindowConfiguration(0, 0.80);
+end
+
 if (lower(computer) == "work") || (lower(computer) == "personal") 
-    scr.screenWidth = 53;         % in cm
-    scr.screenHeight = 30;        % in cm
-    scr.viewingDistance = 40;     % in cm
-    scr.frameRate = 60;         % Hz
+    scr.screenWidth      = 53;     % [cm]
+    scr.screenHeight     = 30;     % [cm]
+    scr.viewingDistance  = 40;     % [cm]
+    scr.frameRate        = 60;     % [Hz]
 elseif lower(computer) == "dark"
     % VPixx/ DarkRoom
-    scr.screenWidth = 150;        %cm
-    scr.screenHeight = 84;        %cm
-    scr.viewingDistance = 180;    %cm
-    
+    scr.screenWidth     = 150;     % [cm]
+    scr.screenHeight     = 84;     % [cm]
+    scr.viewingDistance = 180;     % [cm]
 end
 
-% Here we call some default settings for setting up Psychtoolbox
-%PsychDefaultSetup(2);
+PsychDefaultSetup(2); % Important default settings for Psychtoolbox
 
-% Get the screen numbers. This gives us a number for each of the screens
-% attached to our computer.
-scr.screens = Screen('Screens');
-
-% To draw we select the maximum of these numbers. So in a situation where we
-% have two screens attached to our monitor we will draw to the external
-% screen.
-screenNumber = max(scr.screens);
-
-if setting.TEST == 1 % When in dummy mode, set the screen to be half transparent to be able to see errors in the terminal
-    PsychDebugWindowConfiguration(0, 0.5);
-end
+scr.screens = Screen('Screens'); % Get the screen numbers.
+screenNumber = max(scr.screens); % Draw on screen with max number
 
 %--------------------------------------------------------------------------
 %                           DataPixx connection
@@ -67,36 +59,24 @@ end
 % Define black and white (white will be 1 and black 0). This is because
 % in general luminace values are defined between 0 and 1 with 255 steps in
 % between. With our setup, values defined between 0 and 1.
-scr.white = WhiteIndex(screenNumber);
-scr.black = BlackIndex(screenNumber);
-scr.gray = GrayIndex(screenNumber);
-scr.bgColor = scr.white;
-scr.fgColor = scr.black;
+scr.white       = WhiteIndex(screenNumber);
+scr.black       = BlackIndex(screenNumber);
+scr.gray        = GrayIndex(screenNumber);
 
 % % Open an on screen window using PsychImaging and color it white.
-[scr.window, scr.windowRect] = PsychImaging('OpenWindow', screenNumber, scr.white);
+[scr.window, scr.windowRect] = PsychImaging('OpenWindow', screenNumber, scr.gray);
+Screen('BlendFunction', scr.window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA'); % Enable alpha blending for anti-aliasing
 
-% Get screen info
-scr.config = Screen('Resolution', screenNumber); % Resolution of screen
-scr.xres = scr.config.width;
-scr.yres = scr.config.height;
-scr.frameRate = scr.config.hz;
+scr.config     = Screen('Resolution', screenNumber); % Resolution of screen
+scr.xres       = scr.config.width;
+scr.yres       = scr.config.height;
+scr.frameRate  = scr.config.hz;
 
-scr.frameDuration = round(Screen('GetFlipInterval', scr.window) *1000);
-scr.measuredFrameRate = 1000/ scr.frameDuration;  
+scr.frameDuration     = round(Screen('GetFlipInterval', scr.window) *1000);  % [s] Framre duration
+scr.measuredFrameRate = 1000/ scr.frameDuration;                             % [fps] Frames per second
 
-%assert(scr.frameRate == round(scr.measuredScreenFrameRate))
-
-% Get the center coordinates of the window
 scr.center       = round([scr.windowRect(3) scr.windowRect(4)]/2);
 scr.pixelsPerDeg = tan(1*pi/180) * scr.viewingDistance/(scr.screenWidth/scr.config.width);
-
-%Everything in terms of pixels...
-scr.pixelFixationXY            = round(FixationCenterOffsetXY * scr.pixelsPerDeg) + scr.center; %[x y]
-scr.pixelFixationXYCentered    = round(FixationCenterOffsetXY * scr.pixelsPerDeg) + [0 0];
-
-% Enable alpha blending for anti-aliasing
-Screen('BlendFunction', scr.window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 % Set screen font
 Screen('TextFont', scr.window, 'Ariel');
@@ -106,24 +86,25 @@ Screen('TextSize', scr.window, 36);
 %                           Fixation
 %--------------------------------------------------------------------------
 
-% Here we set the size of the arms of our fixation cross
-%fixCrossDimPix = 20;
 fixation.fixCrossDimPix = 1;
 
 % Now we set the coordinates (these are all relative to zero we will let
 % the drawing routine center the cross in the center of our monitor for us)
-fixation.xCoords   = [-fixation.fixCrossDimPix fixation.fixCrossDimPix 0 0];
-fixation.yCoords   = [0 0 -fixation.fixCrossDimPix fixation.fixCrossDimPix];
-fixation.allCoords = [fixation.xCoords; fixation.yCoords];
+fixation.xCoords      = [-fixation.fixCrossDimPix fixation.fixCrossDimPix 0 0];
+fixation.yCoords      = [0 0 -fixation.fixCrossDimPix fixation.fixCrossDimPix];
+fixation.allCoords    = [fixation.xCoords; fixation.yCoords];
+fixation.posJitterMin = -60; % [px]
+fixation.posJitterMax = 60;  % [px]
 
 % Set the line width for our fixation cross
-fixation.dotWidthPix       = 7.5;
-fixation.fixCkRad          = 2 * scr.pixelsPerDeg; % 2 degs of visual angle
-fixation.fixCkCol          = scr.gray;
-fixation.fixCkCol_initial  = scr.black;
-fixation.fixDurReq         = 0.5; % jitter this
-fixation.fixBrokenMax      = 10;
-fixation.maxTimeWithoutFix = 5;
+fixation.dotWidthPix       = 7.5;                  % [px]
+fixation.fixCkRad          = 2 * scr.pixelsPerDeg; % [dva] 2 * degs of visual angle 
+fixation.fixCkCol          = scr.white;             % When fixating. Dot is gray
+fixation.fixCkCol_initial  = scr.black;            % When NOT fixating, the dot it black
+fixation.fixDurReq         = 0.5;                  % jitter this
+fixation.fixBrokenMax      = 10;                   % Maximum times fixation can be broken
+fixation.maxTimeWithoutFix = 5;                    % [s] Max time without fixation
+fixation.breakTime         = 2;                    % [s] Break 'blink' time and trial number showing
 
 %Maximum priority level
 topPriorityLevel = MaxPriority(scr.window);

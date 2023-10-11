@@ -1,4 +1,4 @@
-function [matName, csvName, contPrevious, continueData] = doesFileExists(filename, csvname)
+function [matName, contPrevious, continueData] = doesFileExists(filename)
 
 % Checks whether file already exists
 % AGodinez December 2022
@@ -11,7 +11,7 @@ folderInfo = dir;
 
 if length(folderInfo) <= 2 % If the folder is empty, give it the same name and get out
     matName = filename;
-    csvName = csvname;
+    %csvName = csvname;
     contPrevious = 'n';
     continueData = '~';
 
@@ -27,7 +27,14 @@ else % If the folder is not empty, try to match each entry with the name to see 
    
             if previousFileName(end-9:end) == filename(end-9:end) % If the name matches
                 previousFile = load(previousFileName); % Load the previous file
-                setting.trialsRemaining = sum(isnan(previousFile.data.nrec(:,6))); % Figure out how many trials remain
+                
+                for j = 1:size(previousFile.trial,2)
+                    trialsRemaining(j,1) = isempty(previousFile.trial(j).flickerFrequency);
+                end
+                
+                setting.trialsRemaining = sum(trialsRemaining); % Remaining trials
+                
+                %setting.trialsRemaining = sum(isnan(previousFile.data.nrec(:,6))); % Figure out how many trials remain
         
                 if setting.trialsRemaining == 0 % If none remain, write on the command window that it already exists
                     error(['File ending : ' filename(end-9:end) ' already exists and seems to be compete! Please check the subject, session and block number and try again.']);
@@ -38,14 +45,14 @@ else % If the folder is not empty, try to match each entry with the name to see 
                     
                     if contPrevious == 'y' % If yes, then you will continue from the last entry -1
                         sprintf('Will continue with the previous data.')
-                        continueData = previousFile.data;
+                        continueData = previousFile;
                         matName = previousFileName;
-                        csvName = previousFileName(1:end-4);
+                        %csvName = previousFileName(1:end-4);
                     elseif contPrevious == 'n'
                         sprintf('Ok, creating a new file \n')
                         continueData = '~';
                         matName = filename;
-                        csvName = csvname;
+                        %csvName = csvname;
                         break
                     end
                     break
@@ -54,7 +61,7 @@ else % If the folder is not empty, try to match each entry with the name to see 
                     contPrevious = 'n';
                     continueData = '~';
                     matName = filename;
-                    csvName = csvname;
+                    %csvName = csvname;
             end
             
         end
