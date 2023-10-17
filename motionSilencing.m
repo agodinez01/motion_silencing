@@ -26,8 +26,8 @@ assert(length(str2num(general.subjectID)) == 1, '%s in not a number! Please make
 general.sessionNum    = input('\n Please enter the session number (0 for practice): ');
 assert(isnumeric(general.sessionNum), '\n Please make sure the session number is numeric! ');
 
-general.block         = input('\n Please enter the block number [1 or 2] : ');
-assert((general.block == 1) || (general.block == 2), '\n Please make sure the block number is either 1 or 2. ');
+general.block         = input('\n Please enter the block number [1, 2 or 3] : ');
+assert((general.block == 1) || (general.block == 2) || (general.block == 3), '\n Please make sure the block number is 1, 2 or 3. ');
 
 setting.eyeUsed = input('\n Which is the dominant eye of the participant? (Left= 0; Right= 1) :');
 assert((setting.eyeUsed == 0) || (setting.eyeUsed == 1), '\n Make sure its 0 (left) or 1 (right) \n')
@@ -70,12 +70,16 @@ try
     first_calib_result = doCalibration(el);
 
     % Set keyboard
-    setKeys;
+    setKeys;  
     
     experimentalLoop;
+    
+    % Shut everything down
+    reddUp;
 
 catch me
     rethrow(me);
+    reddUp;
 end
 
 disp('Saving matfile...');
@@ -87,5 +91,4 @@ Screen('CloseAll');
 %cd('../mat/');
 % Quickly vizualize data 
 %fitDataPsychometric(general.filename)
-
 clear mex;

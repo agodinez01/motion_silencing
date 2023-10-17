@@ -44,7 +44,7 @@ Eyelink('command', 'calibration_type = HV9');
 Eyelink('command', 'link_event_filter = LEFT,RIGHT,BUTTON');
 Eyelink('command', 'link_sample_data  = LEFT,RIGHT,GAZE,AREA');
 Eyelink('command', 'heuristic_filter = 1 1');
-Eyelink('command', 'calibration_area_proportion = 0.8 0.8'); % reduce distance between points
+Eyelink('command', 'calibration_area_proportion = 0.4 0.4'); % reduce distance between points
 Eyelink('command', 'sample_rate = 500');
 
 %--------------------------------------------------------%

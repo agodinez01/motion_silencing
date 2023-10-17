@@ -11,7 +11,7 @@ Screen('Preference', 'SkipSyncTests', 0); % Make sure this is set to 0 when runn
 %--------------------------------------------------------------------------
 
 if setting.TEST == 1 % When in dummy mode, set the screen to be half transparent to be able to see errors in the terminal
-    PsychDebugWindowConfiguration(0, 0.80);
+    PsychDebugWindowConfiguration(0, 0.8);
 end
 
 if (lower(computer) == "work") || (lower(computer) == "personal") 
@@ -72,7 +72,7 @@ scr.xres       = scr.config.width;
 scr.yres       = scr.config.height;
 scr.frameRate  = scr.config.hz;
 
-scr.frameDuration     = round(Screen('GetFlipInterval', scr.window) *1000);  % [s] Framre duration
+scr.frameDuration     = Screen('GetFlipInterval', scr.window) *1000;  % [ms] Frame duration
 scr.measuredFrameRate = 1000/ scr.frameDuration;                             % [fps] Frames per second
 
 scr.center       = round([scr.windowRect(3) scr.windowRect(4)]/2);

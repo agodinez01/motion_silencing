@@ -90,7 +90,7 @@ for t = startTrial:size(trial,2) % Start main loop
         
         % This supplies a title at the bottom of the eyetracker display
         if t <= size(trial,2)
-            Eyelink('command', 'record_status_message ''Trial %d of %d in block %d''', t, size(data.table,1), general.block);
+            Eyelink('command', 'record_status_message ''Trial %d of %d in block %d''', t, size(trial,2), general.block);
         end
         
         % This supplies a screen for the experimenter
@@ -290,8 +290,6 @@ for t = startTrial:size(trial,2) % Start main loop
     % Draw fixation spot and flip
     Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % fixation dot
     tIni = Screen(scr.window, 'Flip');
-    
-%     tEnd = tIni + params.trialDuration;
 
     % clear keyboard buffer
     FlushEvents('KeyDown');
@@ -321,29 +319,16 @@ for t = startTrial:size(trial,2) % Start main loop
     end
 
     while trialDone == 0
-        % First, present the stationary stimulus, followed by the rotating
-        % stimulus
-        if replayRotation == 1
-            for f = trial(t).nStationary:nF % Rotation part
+        if replayRotation == 0
+            for f = 1:trial(t).framesPerCycle % Stationary part and response
                 DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
                 Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
-                Screen('DrawDots', scr.window, [trial(t).dots(f).xpix+addXpos trial(t).dots(f).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
-                Screen('DrawingFinished', scr.window);
-                
-                mfTest(f) = Screen('Flip', scr.window);
-            end
-            replayRotation = 0;
-        elseif replayRotation == 0
-            for f = 1:trial(t).nStationary % Stationary part and response
-                DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
-                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
-                Screen('DrawDots', scr.window, [trial(t).dots(f).xpix+addXpos trial(t).dots(f).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
+                Screen('DrawDots', scr.window, [trial(t).dots(1).xpix+addXpos trial(t).dots(1).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
                 Screen('DrawingFinished', scr.window);
                 
                 mfTest(f) = Screen('Flip', scr.window);
 
                 [keyIsDown, secs, keyCode] = KbCheck;
-                KbReleaseWait;
 
                 if keyCode(keys.escape)
                     ShowCursor;
@@ -353,41 +338,55 @@ for t = startTrial:size(trial,2) % Start main loop
                     % Make new sine wave for flicker
                     frequencyChange = frequencyChange + 0.05; % Increases frequency
                     fprintf('Frequency change = %s ',num2str(frequencyChange));
+
+                    trial(t).framesPerCycle = round(1/frequencyChange * scr.measuredFrameRate);
+                    trial(t).newSamples = 1:trial(t).framesPerCycle;
         
                     % Make sine wave for flicker
-                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(2*pi)*trial(t).samples+trial(t).phaseShift) + trial(t).verticalShift;
-                    for i = 1:trial(t).nStationary
+                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(2*pi)*trial(t).newSamples+trial(t).phaseShift) + trial(t).verticalShift;
+                    
+                    for i = 1:trial(t).framesPerCycle
+                        trial(t).dots(i).col = [];
                         trial(t).dots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
                     end
         
-                    trialDone = 0;
+                    trialDone      = 0;
                     replayRotation = 0;
+                    KbReleaseWait();
                     
                 elseif keyCode(keys.downKey)
+
                     % Make new sine wave for flicker
-                    frequencyChange = frequencyChange - 0.05; % Decreases frequency in Hz
-                    
-                    if frequencyChange == -0.05 % Make sure it cannot go lower than 0
-                        frequencyChange = 0;
+                    if frequencyChange <= 0.05 % Make sure it cannot go lower than 0
+                        frequencyChange = 0.05;
+                    else
+                        frequencyChange = frequencyChange - 0.05; % Decreases frequency in Hz
                     end
                     fprintf('Frequency change = %s ',num2str(frequencyChange));
-        
+
+                    trial(t).framesPerCycle = round(1/frequencyChange * 1000/scr.frameDuration); % [msec]
+                    trial(t).newSamples     = 1:trial(t).framesPerCycle;
+
                     % Make sine wave for flicker
-                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(2*pi)*trial(t).samples + trial(t).phaseShift) + trial(t).verticalShift;
-                    for i = 1:trial(t).nStationary
+                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(2*pi)*trial(t).newSamples + trial(t).phaseShift) + trial(t).verticalShift;
+                    
+                    for i = 1:trial(t).framesPerCycle
+                        trial(t).dots(i).col        = [];
                         trial(t).dots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
                     end
         
                     trialDone = 0;
                     replayRotation = 0;
+                    KbReleaseWait();
         
                 elseif keyCode(keys.space)
                     replayRotation = 1; % Show rotation
-                    trialDone = 0; % Do not finish trial
+                    trialDone      = 0; % Do not finish trial
+                    keepLooping   = 1;
         
                 elseif keyCode(keys.enter(1))
-                    trialDone = 1;
-                    replayRotation = 2;
+                    trialDone                 = 1;
+                    replayRotation            = 2;
                     trial(t).flickerFrequency = frequencyChange;
                     
                     data(t, 1) = t;
@@ -396,6 +395,30 @@ for t = startTrial:size(trial,2) % Start main loop
 
                 end
             end
+            
+        elseif replayRotation == 1
+            
+            while keepLooping == 1
+                for f = trial(t).nStationary:nF % Rotation part
+                    [keyIsDown, secs, keyCode] = KbCheck;
+                    
+                    if keyIsDown && keyCode(keys.space)
+                        DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
+                        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
+                        Screen('DrawDots', scr.window, [trial(t).dots(f).xpix+addXpos trial(t).dots(f).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
+                        Screen('DrawingFinished', scr.window);
+                    
+                        mfTest(f) = Screen('Flip', scr.window);
+
+                    elseif ~keyIsDown
+                        keepLooping    = 0;
+                        replayRotation = 0;
+                        break;
+                    end
+                end
+            end
+            replayRotation = 0;
+
         elseif replayRotation == 2
             trialDone = 1;
             if setting.TEST == 0
