@@ -2,6 +2,19 @@
 
 global general setting scr trial fixation params keys %#ok<*NUSED>
 
+% Load instruction slides
+if general.language == 'e'
+    instruction1 = imread('instruction_1_e.JPG');
+    instruction2 = imread('instruction_2_e.JPG');
+elseif general.language == 'g'
+    instruction1 = imread('instruction_1_g.JPG');
+    instruction2 = imread('instruction_2_g.JPG');
+end
+
+% Make instruction textures
+instruction1Text = Screen('MakeTexture', scr.window, instruction1);
+instruction2Text = Screen('MakeTexture', scr.window, instruction2);
+
 % NEED TO FIGURE THIS OUT
 % Check if continuing from a previous session
 if general.contPrevious == 'y' 
@@ -24,13 +37,16 @@ for t = startTrial:size(trial,2) % Start main loop
     params.fixPos(1)+round(scr.pixelsPerDeg) params.fixPos(2)+round(scr.pixelsPerDeg)];
 
     if t == 1
-        str = sprintf(['ADD INSTRUCTIONS HERE']);
-        
-        %Screen('DrawTexture', scr.window, ADDTEXTUREPOINTER_HERE, [], [0 0 scr.windowRect(3) scr.windowRect(4)]);
-        DrawFormattedText(scr.window, str, 'center', 'center', 0);
+       
+        Screen('DrawTexture', scr.window, instruction1Text, [], [0 0 scr.windowRect(3) scr.windowRect(4)]);
         Screen('Flip', scr.window)
 
-        KbWait([], 2); % Wait for button pres
+        KbWait([], 2); % Wait for button press
+
+        Screen('DrawTexture', scr.window, instruction2Text, [], [0 0 scr.windowRect(3) scr.windowRect(4)]);
+        Screen('Flip', scr.window)
+
+        KbWait([], 2); % Wait for button press
 
         str = sprintf(['Please maintain fixation at the dot. \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' ...
             'Press the space bar to begin.']);
@@ -323,7 +339,7 @@ for t = startTrial:size(trial,2) % Start main loop
             for f = 1:trial(t).framesPerCycle % Stationary part and response
                 DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
                 Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
-                Screen('DrawDots', scr.window, [trial(t).dots(1).xpix+addXpos trial(t).dots(1).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
+                Screen('DrawDots', scr.window, [trial(t).newDots(1).xpix+addXpos trial(t).newDots(1).ypix+addYpos]', trial(t).newDots(f).size', trial(t).newDots(f).col', [], 2);
                 Screen('DrawingFinished', scr.window);
                 
                 mfTest(f) = Screen('Flip', scr.window);
@@ -340,15 +356,26 @@ for t = startTrial:size(trial,2) % Start main loop
                     fprintf('Frequency change = %s ',num2str(frequencyChange));
 
                     trial(t).framesPerCycle = round(1/frequencyChange * scr.measuredFrameRate);
+                    trial(t).framesPerCycle
                     trial(t).newSamples = 1:trial(t).framesPerCycle;
         
                     % Make sine wave for flicker
-                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(2*pi)*trial(t).newSamples+trial(t).phaseShift) + trial(t).verticalShift;
-                    
+                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(360/trial(t).originalFramesPerCycle)*trial(t).newSamples+trial(t).phaseShift) + trial(t).verticalShift;
+
+                    tic
                     for i = 1:trial(t).framesPerCycle
-                        trial(t).dots(i).col = [];
-                        trial(t).dots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
+                        % Reset variables
+                        trial(t).newDots(i).size       = [];
+                        trial(t).newDots(i).xpix       = [];
+                        trial(t).newDots(i).ypix       = [];
+                        trial(t).newDots(i).col        = [];
+
+                        trial(t).newDots(i).size       = trial(t).dots(1).size;
+                        trial(t).newDots(i).xpix       = trial(t).dots(1).xpix;
+                        trial(t).newDots(i).ypix       = trial(t).dots(1).ypix;
+                        trial(t).newDots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
                     end
+                    toc
         
                     trialDone      = 0;
                     replayRotation = 0;
@@ -365,15 +392,26 @@ for t = startTrial:size(trial,2) % Start main loop
                     fprintf('Frequency change = %s ',num2str(frequencyChange));
 
                     trial(t).framesPerCycle = round(1/frequencyChange * 1000/scr.frameDuration); % [msec]
+                    trial(t).framesPerCycle
                     trial(t).newSamples     = 1:trial(t).framesPerCycle;
 
                     % Make sine wave for flicker
-                    trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(2*pi)*trial(t).newSamples + trial(t).phaseShift) + trial(t).verticalShift;
+                    trial(t).fullWaveFormNew =   params.amplitude * sind(frequencyChange*(360/trial(t).originalFramesPerCycle)*trial(t).newSamples + trial(t).phaseShift) + trial(t).verticalShift;
                     
+                    tic
                     for i = 1:trial(t).framesPerCycle
-                        trial(t).dots(i).col        = [];
-                        trial(t).dots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
+                        % Reset variables
+                        trial(t).newDots(i).size       = [];
+                        trial(t).newDots(i).xpix       = [];
+                        trial(t).newDots(i).ypix       = [];
+                        trial(t).newDots(i).col        = [];
+
+                        trial(t).newDots(i).size       = trial(t).dots(1).size;
+                        trial(t).newDots(i).xpix       = trial(t).dots(1).xpix;
+                        trial(t).newDots(i).ypix       = trial(t).dots(1).ypix;
+                        trial(t).newDots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
                     end
+                    toc
         
                     trialDone = 0;
                     replayRotation = 0;
@@ -382,7 +420,8 @@ for t = startTrial:size(trial,2) % Start main loop
                 elseif keyCode(keys.space)
                     replayRotation = 1; % Show rotation
                     trialDone      = 0; % Do not finish trial
-                    keepLooping   = 1;
+                    keepLooping    = 1;
+                    break;
         
                 elseif keyCode(keys.enter(1))
                     trialDone                 = 1;
@@ -399,6 +438,7 @@ for t = startTrial:size(trial,2) % Start main loop
         elseif replayRotation == 1
             
             while keepLooping == 1
+
                 for f = trial(t).nStationary:nF % Rotation part
                     [keyIsDown, secs, keyCode] = KbCheck;
                     
