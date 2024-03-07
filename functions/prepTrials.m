@@ -1,29 +1,31 @@
 function [trial] = prepTrials
 
-global scr general params
+global scr setting params
 
 params.dotColor         = 1;     % -1 = random hue (full saturation and brightness); avlues between 0 and 1: hue value for all dots
 params.dotNumber        = [100]; % dot number
 
-if (general.block == 1) || (general.block == 3) % Experiment 1
-    params.dotSize             = scr.pixelsPerDeg/2;           % [pix] dot size of 1 dva
-elseif general.block == 2
-    params.dotSize             = [scr.pixelsPerDeg/2, scr.pixelsPerDeg/3, scr.pixelsPerDeg/4, scr.pixelsPerDeg/5];
+if (setting.block == 1) || (setting.block == 3) % Experiment 1
+    params.dotSize             = scr.pixelsPerDeg * 0.5;           % [pix] dot size of 1 dva
+elseif setting.block == 2
+    params.dotSize             = [scr.pixelsPerDeg*0.55, scr.pixelsPerDeg*0.25];
 end 
 
-if (general.block == 1) || (general.block == 2)
+if (setting.block == 1) || (setting.block == 2)
     params.dotSpeed            = [3.75, 7.5, 15, 30, 60, 120];                      % [deg/s] dot speed 
     params.dotSpeedPerFrame    = params.dotSpeed*(scr.frameDuration/1000) * pi/180; % [px/frame] Dot speed
     params.coherence           = [100]; % 100% of the dots travel in the same direction
 
-elseif general.block == 3
-    params.dotSpeed           = [1];                        % One time around the speed loop
-    params.coherence          = [0, 25, 50, 75, 100];       % coherence
-    params.mainSpeed          = 15;                         % [deg/s]
-    params.alternativeSpeeds  = [3.75, 7.5, 30, 60, 120];   % [deg/s]
-    
-    params.mainSpeedPerFrame        = params.mainSpeed*(scr.frameDuration/1000) * pi/180;         % [px/frame] Dot speed
-    params.alternativeSpeedPerFrame = params.alternativeSpeeds*(scr.frameDuration/1000) * pi/180; % [px/frame] Dot speed
+elseif setting.block == 3
+    params.dotSpeed             = [3.75, 120];              % One time around the speed loop
+    params.coherence            = [0, 25, 50, 75, 100];     % coherence
+    params.dotSpeedPerFrame     = params.dotSpeed*(scr.frameDuration/1000) * pi/180; % [px/frame]
+
+    params.alternativeSpeeds{1} = [7.5, 15, 30, 60, 120];   % [deg/s]
+    params.alternativeSpeeds{2} = [3.75, 7.5, 15, 30, 60];  % [deg/s]
+
+    params.alternativeSpeedPerFrame{1} = params.alternativeSpeeds{1} *(scr.frameDuration/1000) * pi/180;
+    params.alternativeSpeedPerFrame{2} = params.alternativeSpeeds{2} *(scr.frameDuration/1000) * pi/180;
 end
 
 % Stimulus positioning
@@ -47,7 +49,7 @@ params.phi       = 0;    % Phase
 
 params.nBlocks            = 1;
 
-if general.sessionNum == 0  % Practice round
+if setting.sessionNum == 0  % Practice round
     params.nTrialsPerCellInBlock = 1; 
 else 
     params.nTrialsPerCellInBlock = 3;
@@ -70,13 +72,14 @@ for b = 1:params.nBlocks
                         trial(t).originalFramesPerCycle = trial(t).framesPerCycle;
                         
                         % Set coherence for each dot
-                        if general.block == 3
-                            trial(t).dotSpeedCoherence = params.mainSpeedPerFrame * ones(params.coherence(coh),1);
+                        if setting.block == 3
+                            trial(t).dotSpeedCoherence = params.dotSpeedPerFrame(dspd) * ones(params.coherence(coh),1);
 
                             if length(trial(t).dotSpeedCoherence) < params.dotNumber(dnum)
+                                
                                 numberLeft = params.dotNumber(dnum) - length(trial(t).dotSpeedCoherence);
                                 
-                                remainingVector = repmat(params.alternativeSpeedPerFrame, 1, numberLeft/length(params.alternativeSpeedPerFrame))';
+                                remainingVector = repmat(params.alternativeSpeedPerFrame{dspd}, 1, numberLeft/length(params.alternativeSpeedPerFrame{dspd}))';
                                 trial(t).dotSpeedCoherence(end+1:end+length(remainingVector)) = remainingVector;
                                 trial(t).dotSpeedCoherence = Shuffle(trial(t).dotSpeedCoherence);
 
@@ -202,15 +205,15 @@ for b = 1:params.nBlocks
                         for f = trial(t).nStationary: trial(t).nFrames
                         
                             if rem(t,2) == 1 % Make clockwise
-                                if (general.block == 1) || (general.block == 2)
+                                if (setting.block == 1) || (setting.block == 2)
                                     trial(t).dots(f).a = trial(t).dots(f-1).a + params.dotSpeedPerFrame(dspd);
-                                elseif general.block == 3
+                                elseif setting.block == 3
                                     trial(t).dots(f).a = trial(t).dots(f-1).a + trial(t).dotSpeedCoherence;
                                 end
                             elseif rem(t,2) == 0 % Make counterclockwis
-                                if (general.block == 1) || (general.block == 2)
+                                if (setting.block == 1) || (setting.block == 2)
                                     trial(t).dots(f).a = trial(t).dots(f-1).a + (-1*params.dotSpeedPerFrame(dspd));
-                                elseif general.block == 3
+                                elseif setting.block == 3
                                     trial(t).dots(f).a = trial(t).dots(f-1).a - trial(t).dotSpeedCoherence;
                                 end
                             end

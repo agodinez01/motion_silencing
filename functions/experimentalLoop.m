@@ -1,14 +1,14 @@
 % Experimental loop
 
-global general setting scr trial fixation params keys %#ok<*NUSED>
+global setting scr trial fixation params keys eldata %#ok<*NUSED>
 
 % Load instruction slides
-if general.language == 'e'
-    instruction1 = imread('instruction_1_e.JPG');
-    instruction2 = imread('instruction_2_e.JPG');
-elseif general.language == 'g'
-    instruction1 = imread('instruction_1_g.JPG');
-    instruction2 = imread('instruction_2_g.JPG');
+if setting.language == 'e'
+    instruction1 = imread('instruction_1_e.jpg');
+    instruction2 = imread('instruction_2_e.jpg');
+elseif setting.language == 'g'
+    instruction1 = imread('instruction_1_g.jpg');
+    instruction2 = imread('instruction_2_g.jpg');
 end
 
 % Make instruction textures
@@ -17,9 +17,9 @@ instruction2Text = Screen('MakeTexture', scr.window, instruction2);
 
 % NEED TO FIGURE THIS OUT
 % Check if continuing from a previous session
-if general.contPrevious == 'y' 
+if setting.contPrevious == 'y' 
     startTrial = size(trial,2) - setting.trialsRemaining;
-    general.expStartTime = GetSecs;
+    setting.expStartTime = GetSecs;
 else
     startTrial = 1;
 end
@@ -31,10 +31,13 @@ for t = startTrial:size(trial,2) % Start main loop
     addYpos       = randi([fixation.posJitterMin, fixation.posJitterMax]); % Random position for y jitter
     
     params.fixPos = [scr.center(1)+addXpos scr.center(2)+addYpos];         % Fixation position in x and y pix centered
+    params.minRadLocJittered = [params.minRadLoc(1)+addXpos, params.minRadLoc(2)+addYpos, params.minRadLoc(3)+addXpos, params.minRadLoc(4)+addYpos];
 
     % Interest area for fixation. In this case a total of 2 degrees
     params.interestArea  = [params.fixPos(1)-round(scr.pixelsPerDeg) params.fixPos(2)-round(scr.pixelsPerDeg)...
     params.fixPos(1)+round(scr.pixelsPerDeg) params.fixPos(2)+round(scr.pixelsPerDeg)];
+    
+    trial(t).fixPos = params.fixPos; % Save for all trials
 
     if t == 1
        
@@ -48,65 +51,23 @@ for t = startTrial:size(trial,2) % Start main loop
 
         KbWait([], 2); % Wait for button press
 
-        str = sprintf(['Please maintain fixation at the dot. \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' ...
-            'Press the space bar to begin.']);
-        
-        DrawFormattedText(scr.window, str, 'center', 'center', 0);
-        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol_initial, params.fixPos, 2); % fixation dot
-        Screen('Flip', scr.window);
-
-        KbWait([], 2); % Wait for button press
     end
-
-    % If we want to present breaks/ show progress, we need to add it here
-        % Present breaks after every X time set by fixation.breakTime
-%     if rem(t,10) == 0
-%         str = sprintf(['Blink']);
-% 
-%         DrawFormattedText(scr.window, str, 'center', scr.windowRect(4) - 300, 0);
-%         Screen('Flip', scr.window)
-%         WaitSecs(fixation.breakTime);
-% 
-%         str = sprintf(['Please press space bar to continue']);
-%         
-%         DrawFormattedText(scr.window, str, 'center', scr.windowRect(4) - 300, 0);
-%         Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.gray, [scr.center(1)+addXpos scr.center(2)+addYpos], 2); % fixation dot
-%         Screen('Flip', scr.window)
-% 
-%         KbWait([], 2); % Wait for button press
-%     end
-% 
-%     % Present progress every quarter
-%     if (t == data.table(end,1)/4) || (t == data.table(end,1)/2) || (t == data.table(end,1) * 3/4)
-%         
-%         str = sprintf([strcat('Trial number ', num2str(t), ' out of '), num2str(data.table(end,1))]);
-%         DrawFormattedText(scr.window, str, 'center', scr.windowRect(4) - 300, 0);
-%         Screen('Flip', scr.window)
-%         WaitSecs(fixation.breakTime);
-%     end
-
-    % Perform calibration as determined
-%     % Perform calibration as determined (every quarter)
-%     if mod(t, setting.performCalibration) == 0
-%         if setting.TEST == 0
-%             disp([num2str(Getsecs) ' Performing calibration now.']);
-%             calibResult = EyelinkDoTrackerSetup(el);
-%             if calibResult == el.TERMINATE_KEY
-%                 return
-%             end
-%         end
-%     else
-%         calibResult = [];
-%     end
+    
+    % Draw fixation spot and flip
+    str = sprintf(['Press the space bar to begin.']);
+    DrawFormattedText(scr.window, str, 'center', scr.yres-100, 1);
+    Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol_initial, params.fixPos, 2); % fixation dot
+    tIni = Screen(scr.window, 'Flip');
+    KbWait([], 2); % Wait for button press
     
     %---------------------------------------------------------------------%
-    %%%%%%%%%%%%% Prepare Eyelink for recording this trial %%%%%%%%%%%%%%%%
+    %               Prepare Eyelink for recording this trial              %
     %---------------------------------------------------------------------%
     if setting.TEST==0 % Prepare EyeLink for recording this trial
         
         % This supplies a title at the bottom of the eyetracker display
         if t <= size(trial,2)
-            Eyelink('command', 'record_status_message ''Trial %d of %d in block %d''', t, size(trial,2), general.block);
+            Eyelink('command', 'record_status_message ''Trial %d of %d in block %d''', t, size(trial,2), setting.block);
         end
         
         % This supplies a screen for the experimenter
@@ -126,7 +87,7 @@ for t = startTrial:size(trial,2) % Start main loop
             
             while ~setting.is_recording
                 Eyelink('startrecording');	% start recording
-                WaitSecs(.1);
+                WaitSecs(1);
                 err=Eyelink('checkrecording'); 	% check recording status
                 
                 if err==0
@@ -139,9 +100,7 @@ for t = startTrial:size(trial,2) % Start main loop
             end
         end
     end
-    %---------------------------------------------------------------------%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%% End EyeLink prep %%%%%%%%%%%%%%%%%%%%%%%%%%
-    %---------------------------------------------------------------------%
+
     if setting.TEST==0
         Eyelink('message', 'TRIAL_START %d', t);
         Eyelink('message', 'SYNCTIME');
@@ -152,15 +111,15 @@ for t = startTrial:size(trial,2) % Start main loop
 
     % pre-allocate a few variables:
     % important: here we allow a shortcut to end the experiment
-    params.doEscape       = 0; % 1: the experiment will be terminated (triggered by a keypress during fixation control)
+    eldata.doEscape       = 0; % 1: the experiment will be terminated (triggered by a keypress during fixation control)
     
     % pre-allocate fixation control variables
-    params.fixReq         = 1;              % is set to 0 once fixation is passed
-    params.fixaOn         = NaN;            % time when fixation dot is presented
-    params.fixStart       = NaN;            % time when fixation starts
-    params.fixBrokenCntr  = 0;              % is increased each time the fixation is broken
-    params.fixBrokenTime  = NaN;            % last time when fixation was broken
-    params.fixEnd         = NaN;            % time when fixation control is successful
+    eldata.fixReq         = 1;              % is set to 0 once fixation is passed
+    eldata.fixaOn         = NaN;            % time when fixation dot is presented
+    eldata.fixStart       = NaN;            % time when fixation starts
+    eldata.fixBrokenCntr  = 0;              % is increased each time the fixation is broken
+    eldata.fixBrokenTime  = NaN;            % last time when fixation was broken
+    eldata.fixEnd         = NaN;            % time when fixation control is successful
     eldata.x              = NaN(1,1000000); % x coord
     eldata.y              = NaN(1,1000000); % y coord of Eye link
     eldata.t              = NaN(1,1000000); % eye link timestamp (when retrieved)
@@ -169,21 +128,21 @@ for t = startTrial:size(trial,2) % Start main loop
     % ... and a few control variables
     firstInsideFixLoc = 0;         % is set to 1 when the fixation is within range
     tframe            = 0;         % iterator for number of eyelink samples retrieved
-    current_fix       = [NaN NaN]; % the current fixation [x, y]
+    currentFix       = [NaN NaN]; % the current fixation [x, y]
     
     % Draw fixation to buffer
-    Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
-    params.fixaOn = Screen('Flip', scr.window); % flip upon next refresh and mark it
+    Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol_initial, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
+    eldata.fixaOn = Screen('Flip', scr.window); % flip upon next refresh and mark it
 
     if setting.TEST == 0
         Eyelink('message', 'EVENT_fixaOn');
     end
-    disp([num2str(params.fixaOn), ' Fixation on.']);
+    disp([num2str(eldata.fixaOn), ' Fixation on.']);
 
     %---------------------------------------------------------------------%
-    %%%%%%%%%%%%%%%%%%%%%%%%%% Check Fixation Loop %%%%%%%%%%%%%%%%%%%%%%%%
+    %                          Check Fixation Loop                        %
     %---------------------------------------------------------------------%
-    while params.fixReq == 1 && params.doEscape == 0
+    while eldata.fixReq == 1 && eldata.doEscape == 0
         
         % always check for new eye link or mouse data
         if setting.TEST == 0 % check eyelink
@@ -197,8 +156,8 @@ for t = startTrial:size(trial,2) % Start main loop
             else
                 gotNewSample = 0;
             end
-
-             else % check mouse to simulate gaze samples
+            
+        else % check mouse to simulate gaze samples
             
             if (tframe == 0) || (GetSecs - eldata.t(tframe) > 1/500) % simulating a sampling rate of 500 Hz
                 tframe = tframe + 1;
@@ -212,17 +171,16 @@ for t = startTrial:size(trial,2) % Start main loop
 
          % have we got a new sample? then check whether it's within range
         if gotNewSample
-            dist = hypot(currentFix(1) - params.fixPos(1), currentFix(2) - params.fixPos(2));
-            
+                        
             % check whether the eye is currently in the fixation rect
-            if dist < fixation.fixCkRad %isDotWithinCircle(current_fix, params.fixPos, fixation.fixCkRad) % fixation is in fixation circle
+            if isDotWithinCircle(currentFix, params.fixPos, fixation.fixCkRad) % fixation is in fixation circle
 
                 % draw the dot in the middle of the circle:
-                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.white, [params.fixPos(1) params.fixPos(2)], 2); % fixation dot
+                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol, [params.fixPos(1) params.fixPos(2)], 2); % fixation dot
 
                 if firstInsideFixLoc == 0 % fixation is in the rect for the first time, or has been broken before
                     firstInsideFixLoc = 1;
-                    params.fixStart = GetSecs;
+                    eldata.fixStart = GetSecs;
                     
                     if setting.TEST == 0
                         Eyelink('message', 'EVENT_fixStart');
@@ -232,31 +190,31 @@ for t = startTrial:size(trial,2) % Start main loop
                     
                     % have we spent enough time (specified by fixDur) fixating,
                     % so that we can turn on the cue?
-                    if GetSecs >= (params.fixStart + fixation.fixDurReq) % fixation passed
-                        params.fixEnd = GetSecs;
+                    if GetSecs >= (eldata.fixStart + fixation.fixDurReq) % fixation passed
+                        eldata.fixEnd = GetSecs;
                         
                         if setting.TEST == 0
                             Eyelink('message', 'EVENT_fixEnd');
                         end
                         
                         disp([num2str(GetSecs), ' Fixation successful.']);
-                        params.fixReq = 0;   % fixation not required anymore -> show thestimulus
+                        eldata.fixReq = 0;   % fixation not required anymore -> show thestimulus
                     end
                 end
 
-                else % fixation is no longer in the circle
+            else % fixation is no longer in the circle
 
-                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % fixation dot
+                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol_initial, [params.fixPos(1) params.fixPos(2)], 2); % fixation dot
                 
                 % If the eye has been in the circle before and participant
                 % has fixated but broken the fixation, record 
                 if firstInsideFixLoc == 1
-                    params.fixBrokenTime = GetSecs;
+                    eldata.fixBrokenTime = GetSecs;
                     if setting.TEST == 0
                         Eyelink('message', 'EVENT_fixBroken');
                     end
                     
-                    params.fixBrokenCntr = params.fixBrokenCntr + 1; % Increase fixation broken counter
+                    eldata.fixBrokenCntr = eldata.fixBrokenCntr + 1; % Increase fixation broken counter
                     % reset variables, because fixation was broken
                     firstInsideFixLoc = 0; % fixation is not in the rect anymore
                 end
@@ -265,26 +223,32 @@ for t = startTrial:size(trial,2) % Start main loop
 
         % BREAK OUT OF THE LOOP and request a calibration IF fixation is still
         % required and the fixation is not in the target area ...
-        if params.fixReq == 1 && firstInsideFixLoc == 0
+        if eldata.fixReq == 1 && firstInsideFixLoc == 0
             % 1. td.fixBrokenCntr has exceeded fixBrokenMax.
-            if params.fixBrokenCntr >= fixation.fixBrokenMax
+            if eldata.fixBrokenCntr >= fixation.fixBrokenMax
                 disp([num2str(GetSecs), ' fixBrokenMax reached --> exiting Trial ', num2str(t)]);
-                break
+                
                 % 2. a participant spends maxTimeWithoutFix after dot onset or after
                 % last broken fixation without fixating the initial target
-            elseif (isnan(params.fixBrokenTime) && GetSecs-params.fixaOn > fixation.maxTimeWithoutFix) || ...
-                    (~isnan(params.fixBrokenTime) && GetSecs-params.fixBrokenTime > fixation.maxTimeWithoutFix)
+            elseif (isnan(eldata.fixBrokenTime) && GetSecs-eldata.fixaOn > fixation.maxTimeWithoutFix) || ...
+                    (~isnan(eldata.fixBrokenTime) && GetSecs-eldata.fixBrokenTime > fixation.maxTimeWithoutFix)
                 disp([num2str(GetSecs), ' maxTimeWithoutFix reached --> exiting Trial ', num2str(t)]);
-                break
             end
         end
         
+        [keyIsDown, secs, keyCode] = KbCheck;
+        if keyCode(keys.escape)
+            eldata.doEscape = 1;
+            ShowCursor;
+            sca;
+            return
+        end
+        
         Screen('Flip', scr.window); % flip upon next refresh
-
     end
 
     %---------------------------------------------------------------------%
-    %%%%%%%%%%%%%%%%%%%%%%%% Check Fixation Loop End %%%%%%%%%%%%%%%%%%%%%%
+    %                        Check Fixation Loop End                      %
     %---------------------------------------------------------------------%
 
     %% Stimulus presentation starts here
@@ -303,10 +267,6 @@ for t = startTrial:size(trial,2) % Start main loop
     tClear = [];
     tResp  = [];
 
-    % Draw fixation spot and flip
-    Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % fixation dot
-    tIni = Screen(scr.window, 'Flip');
-
     % clear keyboard buffer
     FlushEvents('KeyDown');
 
@@ -316,8 +276,7 @@ for t = startTrial:size(trial,2) % Start main loop
 
     % First show the entire sequence
     for f = 1:trial(t).nStationary % Stationary part and response
-        DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
-        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
+        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol, params.fixPos, 2); % Fixation
         Screen('DrawDots', scr.window, [trial(t).dots(f).xpix+addXpos trial(t).dots(f).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
         Screen('DrawingFinished', scr.window);
         
@@ -326,9 +285,8 @@ for t = startTrial:size(trial,2) % Start main loop
     end
     
     for f = trial(t).nStationary:nF % Rotation part
-        DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
-        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
         Screen('DrawDots', scr.window, [trial(t).dots(f).xpix+addXpos trial(t).dots(f).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
+        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol, params.fixPos, 2); % Fixation
         Screen('DrawingFinished', scr.window);
         
         mfTest(f) = Screen('Flip', scr.window);
@@ -337,8 +295,7 @@ for t = startTrial:size(trial,2) % Start main loop
     while trialDone == 0
         if replayRotation == 0
             for f = 1:trial(t).framesPerCycle % Stationary part and response
-                DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
-                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
+                Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol, params.fixPos, 2); % Fixation
                 Screen('DrawDots', scr.window, [trial(t).newDots(1).xpix+addXpos trial(t).newDots(1).ypix+addYpos]', trial(t).newDots(f).size', trial(t).newDots(f).col', [], 2);
                 Screen('DrawingFinished', scr.window);
                 
@@ -362,7 +319,6 @@ for t = startTrial:size(trial,2) % Start main loop
                     % Make sine wave for flicker
                     trial(t).fullWaveFormNew = params.amplitude * sind(frequencyChange*(360/trial(t).originalFramesPerCycle)*trial(t).newSamples+trial(t).phaseShift) + trial(t).verticalShift;
 
-                    tic
                     for i = 1:trial(t).framesPerCycle
                         % Reset variables
                         trial(t).newDots(i).size       = [];
@@ -375,7 +331,6 @@ for t = startTrial:size(trial,2) % Start main loop
                         trial(t).newDots(i).ypix       = trial(t).dots(1).ypix;
                         trial(t).newDots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
                     end
-                    toc
         
                     trialDone      = 0;
                     replayRotation = 0;
@@ -384,8 +339,8 @@ for t = startTrial:size(trial,2) % Start main loop
                 elseif keyCode(keys.downKey)
 
                     % Make new sine wave for flicker
-                    if frequencyChange <= 0.05 % Make sure it cannot go lower than 0
-                        frequencyChange = 0.05;
+                    if frequencyChange < 0.05 % Make sure it cannot go lower than 0
+                        frequencyChange = 0.001;
                     else
                         frequencyChange = frequencyChange - 0.05; % Decreases frequency in Hz
                     end
@@ -398,7 +353,6 @@ for t = startTrial:size(trial,2) % Start main loop
                     % Make sine wave for flicker
                     trial(t).fullWaveFormNew =   params.amplitude * sind(frequencyChange*(360/trial(t).originalFramesPerCycle)*trial(t).newSamples + trial(t).phaseShift) + trial(t).verticalShift;
                     
-                    tic
                     for i = 1:trial(t).framesPerCycle
                         % Reset variables
                         trial(t).newDots(i).size       = [];
@@ -410,8 +364,15 @@ for t = startTrial:size(trial,2) % Start main loop
                         trial(t).newDots(i).xpix       = trial(t).dots(1).xpix;
                         trial(t).newDots(i).ypix       = trial(t).dots(1).ypix;
                         trial(t).newDots(i).col(:,1:3) = repmat(trial(t).fullWaveFormNew(:,i),1,3);
+                        
+                        [keyIsDown, secs, keyCode] = KbCheck;
+                        if keyCode(keys.space)
+                            replayRotation = 1; % Show rotation
+                            trialDone      = 0; % Do not finish trial
+                            keepLooping    = 1;
+                            break; 
+                        end
                     end
-                    toc
         
                     trialDone = 0;
                     replayRotation = 0;
@@ -431,7 +392,7 @@ for t = startTrial:size(trial,2) % Start main loop
                     data(t, 1) = t;
                     data(t, 2) = trial(t).dotSpeed;
                     data(t, 3) = frequencyChange;
-
+                    break;
                 end
             end
             
@@ -443,9 +404,8 @@ for t = startTrial:size(trial,2) % Start main loop
                     [keyIsDown, secs, keyCode] = KbCheck;
                     
                     if keyIsDown && keyCode(keys.space)
-                        DrawFormattedText(scr.window, num2str(t), scr.xres - 200, scr.yres - 100, 0);
-                        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, scr.black, [params.fixPos(1) params.fixPos(2)], 2); % Fixation
                         Screen('DrawDots', scr.window, [trial(t).dots(f).xpix+addXpos trial(t).dots(f).ypix+addYpos]', trial(t).dots(f).size', trial(t).dots(f).col', [], 2);
+                        Screen('DrawDots', scr.window, fixation.allCoords, fixation.dotWidthPix, fixation.fixCkCol, params.fixPos, 2); % Fixation
                         Screen('DrawingFinished', scr.window);
                     
                         mfTest(f) = Screen('Flip', scr.window);

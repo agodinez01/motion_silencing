@@ -11,7 +11,7 @@ Screen('Preference', 'SkipSyncTests', 0); % Make sure this is set to 0 when runn
 %--------------------------------------------------------------------------
 
 if setting.TEST == 1 % When in dummy mode, set the screen to be half transparent to be able to see errors in the terminal
-    PsychDebugWindowConfiguration(0, 0.8);
+%     PsychDebugWindowConfiguration(0, 0.8);
 end
 
 if (lower(computer) == "work") || (lower(computer) == "personal") 
@@ -99,8 +99,8 @@ fixation.posJitterMax = 60;  % [px]
 % Set the line width for our fixation cross
 fixation.dotWidthPix       = 7.5;                  % [px]
 fixation.fixCkRad          = 2 * scr.pixelsPerDeg; % [dva] 2 * degs of visual angle 
-fixation.fixCkCol          = scr.white;             % When fixating. Dot is gray
-fixation.fixCkCol_initial  = scr.black;            % When NOT fixating, the dot it black
+fixation.fixCkCol          = [0.2 0.2 0.2];        % When fixating, the dot is darker
+fixation.fixCkCol_initial  = [0.8 0.8 0.8];        % When NOT fixating, the dot is lighter
 fixation.fixDurReq         = 0.5;                  % jitter this
 fixation.fixBrokenMax      = 10;                   % Maximum times fixation can be broken
 fixation.maxTimeWithoutFix = 5;                    % [s] Max time without fixation
@@ -109,3 +109,5 @@ fixation.breakTime         = 2;                    % [s] Break 'blink' time and 
 %Maximum priority level
 topPriorityLevel = MaxPriority(scr.window);
 Priority(topPriorityLevel);
+
+beep on;

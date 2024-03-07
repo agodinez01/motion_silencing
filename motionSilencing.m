@@ -1,21 +1,17 @@
 % Motion silencing experiment for SCIoI Project 02
 % Angelica Godinez 2023 with code from Martin Rolfs & Richard Schweitzer
-%
-% TODO:
-% Check start trial when continuing from previous session
-% Check fixation requirement once all stim values are set!!
 
 clear all;
 close all;
 
 addpath("data/", "functions/", "images/")
 
-global general setting trial
+global setting trial
 
 computer = "dark";
 
 setting.TEST          = 0; % test in dummy mode? 0=with EyeLink; 1=mouse as eye;
-general.expName       = 'MSV1';
+setting.expName       = 'MoSi';
 
 generalSetup; % Filename, eye, language.. ect
 
@@ -24,15 +20,20 @@ try
     % Prepare screen
     prepScreen(computer)
 
-    if general.contPrevious == 'y' % If the file exists and there are still trials remaining, continue data
+    if setting.contPrevious == 'y' % If the file exists and there are still trials remaining, continue data
         trial = continueData.trial;
+        params = continueData.params;
+%         scr = continueData.scr;
+%         setting = continueData.setting;
+%         fixation = continueData.fixation;
+%         eldata = continueData.eldata;
     else                           % Otherwise, start a new data matrix
-        trial = prepTrials;
+        trial = prepTrials3;
     end  
 
     % Initialize EyeLink connection
     if setting.TEST == 0
-        [el, err] = initEyelink(general.subjectCode);
+        [el, err] = initEyelink(setting.subjectCode);
         if err == el.TERMINATE_KEY
             return
         end
@@ -49,17 +50,16 @@ try
     experimentalLoop;
     
     % Shut everything down
-    reddUp;
+    eyeLinkCleanUp;
 
 catch me
     rethrow(me);
-    reddUp;
+    eyeLinkCleanUp;
 end
 
 disp('Saving matfile...');
 
-save(general.filename, 'trial'); % Save matfile
-%writematrix(data.trial, strcat('../csv/',general.csvname, '.csv')); % Save csv file
+save([setting.filename], 'trial', 'setting', 'scr', 'params', 'fixation', 'eldata')
 
 Screen('CloseAll');
 %cd('../mat/');

@@ -5,7 +5,7 @@ function [el, error]=initEyelink(vpcode)
 % 
 % 2008 by Martin Rolfs
 
-global setting visual scr
+global setting scr
 
 %---------------------%
 % define edf-filename %

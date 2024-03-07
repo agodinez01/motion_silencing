@@ -21,7 +21,7 @@ else % If the folder is not empty, try to match each entry with the name to see 
     for k = 1:length(folderInfo)
         previousFileName = folderInfo(k).name;
         
-        if length(previousFileName) < 4 % If there are less than four characters, it is not a file
+        if length(previousFileName) < 10 % If there are less than four characters, it is not a file
             fprintf('%s is not a file \n', previousFileName)
         else
    
