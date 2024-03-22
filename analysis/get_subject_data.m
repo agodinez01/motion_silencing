@@ -1,6 +1,7 @@
+clear all; close all;
 
 addpath('../analysis')
-dataDir = 'C:\Users\angie\Git Root\motion_silencing\data\mat';
+dataDir = 'C:\Users\angie\Box\motion_silencing\data\mat';
 
 cd(strcat(dataDir));
 all_files = dir; 
@@ -45,15 +46,49 @@ blockFiles = {};
 
 % Get the list of files for each block
 for block = 1:length(blocksUnique)
-    idx = find(blocks == blocks(block));
+    idx = find(blocks == block);
     for i=1:length(idx)
-        blockFiles{block,i} = files{idx(i)};
+        blockFiles{block, i} = files{idx(i)};
+    end
+end
+
+
+% for block = 1:length(blocksUnique)
+%     idx = find(blocks == blocks(block));
+%     for i=1:length(idx)
+%         if (blocks(block) == 1) || (blocks(block) == 4)
+%             blockFiles{1,i} = files{idx(i)};
+%         elseif (blocks(block) == 3) || (blocks(block) == 5)
+%             blockFiles{3,i} = files{idx(i)};
+%         elseif blocks(block) == 2
+%             blockFiles{2,i} = files{idx(i)};
+%         end
+%     end
+% end
+
+data = [];
+for block=1:5
+    for subject=1:length(blockFiles)
+        if isempty(blockFiles{block, subject})
+            sprintf('Subject %s and block %s does not exists! ', num2str(subject), num2str(block))
+        else
+            subFile = load(blockFiles{block,subject});
+            for trial = 1:length(subFile.trial)
+                dataSize = size(data);
+                data(dataSize(1)+1,1) = str2num(blockFiles{block,subject}(split(2)+1:split(3)-1)); % subject
+                data(dataSize(1)+1,2) = block; % block
+                data(dataSize(1)+1,3) = trial; % trial
+                data(dataSize(1)+1,4) = subFile.trial(trial).dotSpeed; % speed
+                data(dataSize(1)+1,5) = subFile.trial(trial).dotSize; % size
+                data(dataSize(1)+1,6) = subFile.trial(trial).flickerFrequency; % response
+            end
+        end
     end
 end
 
 
 
-
+data;
 
 
 subOrder = nan(1,length(subjects));
