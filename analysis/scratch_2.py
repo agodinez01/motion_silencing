@@ -25,87 +25,112 @@ data['condition'] = np.select(conditions, values)
 data['condition'] = data['condition'].astype('string')
 
 conditions = data['condition'].unique()
+runs = ['with', 'without']
 
-sns.boxplot(data=data, x='condition', y='factor', hue='condition')
-plt.show()
+# Run the analysis with the lower speed values included and not included
+def runAnalysis(data, group_colors):
 
-sns.boxplot(data=data, y='factor')
-plt.show()
+    myPal = {'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Size':'#CC6677'}
+    sns.boxplot(data=data, x='condition', y='factor', hue='condition', palette=myPal)
+    plt.show()
 
-sns.displot(data, x='factor', hue='condition', kind='kde', fill=True)
-plt.show()
+    sns.boxplot(data=data, y='factor')
+    plt.show()
 
-# Remove outliers. After visualizing the data in different ways, factor seems to have the biggest outliers
-Q1 = data['factor'].quantile(0.25)
-Q3 = data['factor'].quantile(0.75)
-IQR = Q3 - Q1
+    sns.displot(data, x='factor', hue='condition', kind='kde', fill=True, palette=myPal)
+    plt.show()
 
-upper = Q3 + 1.5 * IQR
-lower = Q1 - 1.5 * IQR
+    # Remove outliers. After visualizing the data in different ways, factor seems to have the biggest outliers
+    Q1 = data['factor'].quantile(0.25)
+    Q3 = data['factor'].quantile(0.75)
+    IQR = Q3 - Q1
 
-upperArray = data.index[data['factor'] >= upper].tolist()
-lowerArray = data.index[data['factor'] <= lower].tolist()
+    upper = Q3 + 1.5 * IQR
+    lower = Q1 - 1.5 * IQR
 
-data.drop(index=upperArray, inplace=True)
-data.drop(index=lowerArray, inplace=True)
+    upperArray = data.index[data['factor'] >= upper].tolist()
+    lowerArray = data.index[data['factor'] <= lower].tolist()
 
-sns.boxplot(data=data, x='condition', y='factor', hue='condition')
-plt.show()
+    data.drop(index=upperArray, inplace=True)
+    data.drop(index=lowerArray, inplace=True)
 
-sns.boxplot(data=data, y='factor')
-plt.show()
+    # data.to_csv(myPath + 'dataNoOutliers.csv')
 
-sns.displot(data, x='factor', hue='condition', kind='kde', fill=True)
-plt.show()
+    sns.boxplot(data=data, x='condition', y='factor', hue='condition', palette=myPal)
+    plt.show()
 
-subData = data.loc[(data['condition'] == 'Rotation') | (data['condition'] == 'Random')]
+    sns.boxplot(data=data, y='factor')
+    plt.show()
 
-sns.set_style('white')
-sigColor = '#262626'
-sigColorLight = '#bfbfbf'
+    sns.displot(data, x='factor', hue='condition', kind='kde', fill=True, palette=myPal)
+    plt.show()
 
-boxprops = {'edgecolor': '#bfbfbf', 'linewidth': 2, 'facecolor':'w'}
-lineprops= {'color': '#bfbfbf', 'linewidth': 2}
+    subData = data.loc[(data['condition'] == 'Rotation') | (data['condition'] == 'Random')]
 
-pal = {'Rotation':'#DDCC77', 'Random':'#88CCEE'} # yellow is for the regular experiment. Blue is for the one with random motion
-strip_pal = ['#bfbfbf']
-kwargs = {'palette': pal, 'hue_order': ['Rotation', 'Random']}
+    sns.set_style('white')
+    sigColor = '#262626'
+    sigColorLight = '#bfbfbf'
 
-boxplot_kwargs = dict({
-    'boxprops':boxprops,
-    'medianprops':{'color':'k', 'linewidth':2},
-    'whiskerprops':lineprops,
-    'capprops':lineprops,
-    'width':0.75,
-    'hue':'condition',
-    **kwargs
-})
+    boxprops = {'edgecolor': '#bfbfbf', 'linewidth': 2, 'facecolor':'w'}
+    lineprops= {'color': '#bfbfbf', 'linewidth': 2}
 
-stripplot_kwargs = {
-    'size': 5,
-    'alpha': 0.7,
-    'hue': 'condition',
-    'dodge': True,
-    'jitter':True,
-    'zorder':0,
-    **kwargs
-}
+    pal = {'Rotation':'#DDCC77', 'Random':'#88CCEE'} # yellow is for the regular experiment. Blue is for the one with random motion
+    
+    strip_pal = ['#bfbfbf']
+    kwargs = {'palette': pal, 'hue_order': ['Rotation', 'Random']}
 
-tick_fontsize = 16
-label_fontsize = 20
+    boxplot_kwargs = dict({
+        'boxprops':boxprops,
+        'medianprops':{'color':'k', 'linewidth':2},
+        'whiskerprops':lineprops,
+        'capprops':lineprops,
+        'width':0.75,
+        'hue':'condition',
+        **kwargs
+    })
 
-fig, axes = plt.subplots(1,2, figsize=(14, 12), gridspec_kw={'wspace':0.3, 'hspace':0.1})
+    stripplot_kwargs = {
+        'size': 5,
+        'alpha': 0.7,
+        'hue': 'condition',
+        'dodge': True,
+        'jitter':True,
+        'zorder':0,
+        **kwargs
+    }
 
-## Box plot for each group, regardless of shape
-boxprops = {'edgecolor': '#bfbfbf', 'linewidth': 2, 'facecolor':'w'}
-lineprops= {'color': '#bfbfbf', 'linewidth': 2}
+    tick_fontsize = 16
+    label_fontsize = 20
 
-sns.stripplot(ax=axes[0,0], data=subData, x='speed', y='factor', **stripplot_kwargs)
-sns.boxplot(ax=axes[0,0], data=subData, x='speed', y='factor', fliersize=0)
+    fig, axes = plt.subplots(1,1, figsize=(14, 12), gridspec_kw={'wspace':0.3, 'hspace':0.1})
 
-for i, artist in enumerate(axes[0,0].artists):
-    artist.set_edgecolor(group_colors[i])
-    artist.set_facecolor('None')
+    ## Box plot for each group, regardless of shape
+    boxprops = {'edgecolor': '#bfbfbf', 'linewidth': 2, 'facecolor':'w'}
+    lineprops= {'color': '#bfbfbf', 'linewidth': 2}
 
-plt.show()
-data
+    sns.stripplot(data=subData, x='speed', y='factor', **stripplot_kwargs)
+    sns.boxplot(data=subData, x='speed', y='factor', fliersize=0, **boxplot_kwargs)
+
+    for i, artist in enumerate(axes.artists):
+        artist.set_edgecolor(group_colors[i])
+        artist.set_facecolor('None')
+
+    plt.show()
+
+for run in enumerate(runs):
+    if run[1] == 'with':
+        data = data
+        group_colors = {'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Rotation':'#DDCC77', 'Random':'#88CCEE',
+                        'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Rotation':'#DDCC77', 'Random':'#88CCEE',
+                        'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Rotation':'#DDCC77', 'Random':'#88CCEE', 'Rotation':'#DDCC77', 'Random':'#88CCEE',
+                        'Rotation':'#DDCC77', 'Random':'#88CCEE'}
+        runAnalysis(data, group_colors)
+    elif run[1] == 'without':
+        data = data.drop(data[(data['speed'] < 3) | (data['speed'] > 130)].index)
+        group_colors = {'Rotation': '#DDCC77', 'Random': '#88CCEE', 'Rotation': '#DDCC77', 'Random': '#88CCEE',
+                        'Rotation': '#DDCC77', 'Random': '#88CCEE',
+                        'Rotation': '#DDCC77', 'Random': '#88CCEE', 'Rotation': '#DDCC77', 'Random': '#88CCEE',
+                        'Rotation': '#DDCC77', 'Random': '#88CCEE',
+                        }
+        runAnalysis(data, group_colors)
+
