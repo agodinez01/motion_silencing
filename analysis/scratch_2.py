@@ -22,13 +22,41 @@ conditions = [
 values = ['Rotation', 'Random', 'Size']
 
 data['condition'] = np.select(conditions, values)
-data['condition'] = data['condition'].astype(str)
+data['condition'] = data['condition'].astype('string')
 
 conditions = data['condition'].unique()
 
-# Remove outliers
-Q1 = data[]
+sns.boxplot(data=data, x='condition', y='factor', hue='condition')
+plt.show()
 
+sns.boxplot(data=data, y='factor')
+plt.show()
+
+sns.displot(data, x='factor', hue='condition', kind='kde', fill=True)
+plt.show()
+
+# Remove outliers. After visualizing the data in different ways, factor seems to have the biggest outliers
+Q1 = data['factor'].quantile(0.25)
+Q3 = data['factor'].quantile(0.75)
+IQR = Q3 - Q1
+
+upper = Q3 + 1.5 * IQR
+lower = Q1 - 1.5 * IQR
+
+upperArray = data.index[data['factor'] >= upper].tolist()
+lowerArray = data.index[data['factor'] <= lower].tolist()
+
+data.drop(index=upperArray, inplace=True)
+data.drop(index=lowerArray, inplace=True)
+
+sns.boxplot(data=data, x='condition', y='factor', hue='condition')
+plt.show()
+
+sns.boxplot(data=data, y='factor')
+plt.show()
+
+sns.displot(data, x='factor', hue='condition', kind='kde', fill=True)
+plt.show()
 
 subData = data.loc[(data['condition'] == 'Rotation') | (data['condition'] == 'Random')]
 
@@ -66,14 +94,18 @@ stripplot_kwargs = {
 tick_fontsize = 16
 label_fontsize = 20
 
+fig, axes = plt.subplots(1,2, figsize=(14, 12), gridspec_kw={'wspace':0.3, 'hspace':0.1})
+
 ## Box plot for each group, regardless of shape
 boxprops = {'edgecolor': '#bfbfbf', 'linewidth': 2, 'facecolor':'w'}
 lineprops= {'color': '#bfbfbf', 'linewidth': 2}
 
-sns.stripplot(data=subData, x='speed', y='factor', hue='condition')
-sns.boxplot(data=subData, x='speed', y='factor', hue='condition', fliersize=0)
+sns.stripplot(ax=axes[0,0], data=subData, x='speed', y='factor', **stripplot_kwargs)
+sns.boxplot(ax=axes[0,0], data=subData, x='speed', y='factor', fliersize=0)
 
-plt.show()
-for i, artist in enumerate(artists):
+for i, artist in enumerate(axes[0,0].artists):
     artist.set_edgecolor(group_colors[i])
     artist.set_facecolor('None')
+
+plt.show()
+data
