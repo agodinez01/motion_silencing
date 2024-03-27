@@ -124,18 +124,20 @@ def runAnalysis(data, run):
     # plt.savefig(fname=figPath + figname, bbox_inches='tight', format='svg', dpi=300)
 
     # Remove outliers using the log scaled values. After visualizing the data in different ways, factor seems to have the biggest outliers
-    Q1 = subData['factorLog'].quantile(0.25)
-    Q3 = subData['factorLog'].quantile(0.75)
-    IQR = Q3 - Q1
+    # Q1 = subData['factorLog'].quantile(0.25)
+    # Q3 = subData['factorLog'].quantile(0.75)
+    # IQR = Q3 - Q1
+    #
+    # upper = Q3 + 1.5 * IQR
+    # lower = Q1 - 1.5 * IQR
+    #
+    # upperArray = subData.index[subData['factorLog'] >= upper].tolist()
+    # lowerArray = subData.index[subData['factorLog'] <= lower].tolist()
+    #
+    # subData.drop(index=upperArray, inplace=True)
+    # subData.drop(index=lowerArray, inplace=True)
 
-    upper = Q3 + 1.5 * IQR
-    lower = Q1 - 1.5 * IQR
-
-    upperArray = subData.index[subData['factorLog'] >= upper].tolist()
-    lowerArray = subData.index[subData['factorLog'] <= lower].tolist()
-
-    subData.drop(index=upperArray, inplace=True)
-    subData.drop(index=lowerArray, inplace=True)
+    subData = subData.loc[subData['factor'] < 10]
 
     subData.to_csv(myPath + 'dataNoOutliers.csv')
 
